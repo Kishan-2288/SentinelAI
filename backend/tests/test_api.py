@@ -125,6 +125,9 @@ def test_audit_event_detail_returns_event(client):
         "occurred_at": event.occurred_at,
         "event_type": "test_event",
         "payload": {"value": 1},
+        "run_id": None,
+        "run_name": None,
+        "run_status": None,
         "previous_hash": event.previous_hash,
         "event_hash": event.event_hash,
     }

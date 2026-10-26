@@ -6,9 +6,16 @@ import ErrorMessage from "../components/common/ErrorMessage";
 import EmptyState from "../components/common/EmptyState";
 import DataTable from "../components/common/DataTable";
 import { useAuditEvents, useVerifyChain } from "../hooks/useAuditLogs";
-import { findBrokenLinks } from "../features/audit/auditHelpers";
 import { formatDateTime } from "../utils/formatDate";
-import { shortHash } from "../utils/formatStatus";
+import type { AuditEvent } from "../types/audit";
+
+type AuditRunGroup = {
+  key: string;
+  runId: number | null;
+  runName: string;
+  status: string;
+  events: AuditEvent[];
+};
 
 export default function AuditLogsPage() {
   const events = useAuditEvents();
@@ -17,7 +24,24 @@ export default function AuditLogsPage() {
   if (events.isLoading) return <LoadingState />;
   if (events.isError) return <ErrorMessage error={events.error} />;
   const list = [...(events.data ?? [])].sort((a, b) => b.sequence - a.sequence);
-  const broken = findBrokenLinks(list);
+  const groups = Array.from(
+    list.reduce((map, event) => {
+      const key = event.run_id != null ? `run:${event.run_id}` : "other";
+      const group = map.get(key) ?? {
+        key,
+        runId: event.run_id ?? null,
+        runName: event.run_name ?? "Other activity",
+        status: event.run_status ?? "activity",
+        events: [],
+      };
+      group.events.push(event);
+      if (event.run_status) group.status = event.run_status;
+      if (event.run_name) group.runName = event.run_name;
+      map.set(key, group);
+      return map;
+    }, new Map<string, AuditRunGroup>())
+    .values()
+  ).sort((a, b) => b.events[0].sequence - a.events[0].sequence);
   const result = verify.data;
 
   return (
@@ -39,17 +63,17 @@ export default function AuditLogsPage() {
       )}
       <div className="panel">
         <DataTable
-          rows={list}
-          rowKey={(e) => String(e.id)}
-          onRowClick={(e) => navigate(`/audit/${e.id}`)}
-          empty={<EmptyState title="No audit events" hint="Events appear here as actions are recorded." />}
+          rows={groups}
+          rowKey={(group) => group.key}
+          onRowClick={(group) => group.runId != null ? navigate(`/runs/${group.runId}`) : navigate(`/audit/${group.events[0].id}`)}
+          empty={<EmptyState title="No audit activity" hint="Events appear here as actions are recorded." />}
           columns={[
-            { key: "seq", header: "#", render: (e) => e.sequence },
-            { key: "type", header: "Event type", render: (e) => <span className="font-medium">{e.event_type}</span> },
-            { key: "time", header: "Time", render: (e) => formatDateTime(e.created_at) },
-            { key: "prev", header: "Previous hash", render: (e) => <span className="font-mono text-xs">{shortHash(e.previous_hash)}</span> },
-            { key: "hash", header: "Event hash", render: (e) => <span className="font-mono text-xs">{shortHash(e.event_hash)}</span> },
-            { key: "link", header: "Link", render: (e) => broken.has(e.id) || (result?.failed_event_id != null && String(result.failed_event_id) === String(e.id)) ? <span className="text-danger">Broken</span> : <span className="text-ok">OK</span> },
+            { key: "run", header: "Run", render: (group) => <span className="font-medium">{group.runName}</span> },
+            { key: "runId", header: "Run ID", render: (group) => group.runId ?? "—" },
+            { key: "count", header: "Events", render: (group) => group.events.length },
+            { key: "status", header: "Status", render: (group) => <span className="capitalize">{group.status.replace(/_/g, " ")}</span> },
+            { key: "first", header: "First event", render: (group) => formatDateTime(group.events[group.events.length - 1].created_at) },
+            { key: "last", header: "Last event", render: (group) => formatDateTime(group.events[0].created_at) },
           ]}
         />
       </div>

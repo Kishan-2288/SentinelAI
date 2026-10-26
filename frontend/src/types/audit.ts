@@ -7,6 +7,9 @@ export interface AuditEvent {
   previous_hash: string;
   event_hash: string;
   created_at: string;
+  run_id?: number | null;
+  run_name?: string | null;
+  run_status?: string | null;
 }
 
 export interface ChainVerification {
