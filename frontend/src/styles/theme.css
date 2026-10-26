@@ -1,0 +1,22 @@
+@theme {
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-canvas: #181b1f;
+  --color-surface: #2d3038;
+  --color-surface-raised: #393e43;
+  --color-ink: #f5f7f8;
+  --color-ink-soft: #25282e;
+  --color-muted: #aeb5ba;
+  --color-line: rgba(255, 255, 255, 0.09);
+  --color-brand: #55c7b5;
+  --color-brand-dark: #3da493;
+  --color-brand-soft: rgba(85, 199, 181, 0.14);
+  --color-ok: #55c7b5;
+  --color-ok-soft: rgba(85, 199, 181, 0.14);
+  --color-warn: #d8a96b;
+  --color-warn-soft: rgba(216, 169, 107, 0.16);
+  --color-danger: #c87982;
+  --color-danger-soft: rgba(200, 121, 130, 0.16);
+  --color-info: #7697d6;
+  --color-info-soft: rgba(118, 151, 214, 0.16);
+}

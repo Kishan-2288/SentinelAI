@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+html, body, #root { height: 100%; }
+body { margin: 0; background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); }
+:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 3px; }
+.field { width: 100%; border: 1px solid var(--color-line); background: var(--color-ink-soft); color: var(--color-ink); border-radius: 10px; padding: 0.65rem 0.8rem; font-size: 0.875rem; transition: border-color 160ms ease, box-shadow 160ms ease; }
+.field::placeholder { color: var(--color-muted); }
+.field:focus { border-color: var(--color-brand); box-shadow: 0 0 0 3px var(--color-brand-soft); outline: none; }
+.btn { display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 10px; padding: 0.55rem 0.9rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+.btn:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-primary { background: var(--color-brand); color: #181b1f; box-shadow: 0 8px 20px rgba(85, 199, 181, 0.16); }
+.btn-primary:hover { background: var(--color-brand-dark); box-shadow: 0 10px 24px rgba(85, 199, 181, 0.24); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary { background: var(--color-surface-raised); border-color: var(--color-line); color: var(--color-ink); }
+.btn-secondary:hover { background: #565c61; border-color: rgba(255, 255, 255, 0.16); }
+.panel { background: linear-gradient(145deg, #393e43, #2d3038); border: 1px solid var(--color-line); border-radius: 18px; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18); }
+.icon-button { display: inline-flex; min-height: 40px; min-width: 40px; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 999px; color: var(--color-muted); transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease; }
+.icon-button:hover, .icon-button:focus-visible { background: var(--color-brand-soft); border-color: rgba(85, 199, 181, 0.22); color: var(--color-brand); transform: translateY(-1px); }
+@media (hover: none) {
+  .icon-button:active { background: var(--color-brand-soft); color: var(--color-brand); transform: scale(0.96); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
