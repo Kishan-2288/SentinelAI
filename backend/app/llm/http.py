@@ -48,7 +48,9 @@ async def post_json(provider: str, url: str, *, json_body: dict, headers: dict |
     if code in (401, 403):
         raise ProviderConfigError(f"{provider}: credentials rejected (HTTP {code})")
     if code == 429 or code >= 500:
-        raise ProviderError(f"{provider}: temporary error (HTTP {code})", retryable=True,
+        detail = _error_code(response)
+        suffix = f", {detail}" if detail else ""
+        raise ProviderError(f"{provider}: temporary error (HTTP {code}{suffix})", retryable=True,
                             retry_after=_retry_after(response))
     if code >= 400:
         detail = _error_code(response)

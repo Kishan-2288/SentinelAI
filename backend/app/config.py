@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     external_api_model: str = ""
     secret_encryption_key: str = ""
     request_timeout_seconds: float = 60.0
-    llm_max_attempts: int = 3
-    llm_retry_backoff_seconds: float = 1.0
+    llm_max_attempts: int = 5
+    llm_retry_backoff_seconds: float = 2.0
     max_concurrent_runs: int = 2
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     dev_user_id: str = "local-dev"

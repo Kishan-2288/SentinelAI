@@ -68,7 +68,7 @@ A background worker executes the cases and the frontend polls `GET /api/v1/runs/
 | `failed` | All cases errored, credentials were rejected, or the server restarted mid-run |
 
 Case outcomes: `pass`, `fail`, `needs_review`, `error`, `pending`.
-Transient provider errors (timeouts, connection failures, HTTP 429/5xx) are retried with exponential backoff (`LLM_MAX_ATTEMPTS`, `LLM_RETRY_BACKOFF_SECONDS`).
+Transient provider errors (timeouts, connection failures, HTTP 429/5xx) are retried with exponential backoff (`LLM_MAX_ATTEMPTS`, default 5, and `LLM_RETRY_BACKOFF_SECONDS`, default 2: waits of 2s, 4s, 8s, 16s). A provider `Retry-After` header is honoured. New or busy models (e.g. Gemini) can return HTTP 503 for tens of seconds; raise these values if runs still end in `temporary error (HTTP 503)`.
 At most `MAX_CONCURRENT_RUNS` runs execute at once.
 
 ### Test case format

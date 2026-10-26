@@ -189,3 +189,27 @@ def test_configure_from_registry_applies_base_url_and_settings(session_factory):
         client.configure_from_registry(db, "u1", "gemini-3.8-flash")
     assert client.base_url == GEMINI_URL.rstrip("/")
     assert (client.temperature, client.max_tokens, client.timeout) == (1, 2048, 90.0)
+
+
+async def test_503_is_retryable_and_reports_provider_status_code():
+    body = {"error": {"code": 503, "status": "UNAVAILABLE", "message": "The model is overloaded."}}
+    c = ExternalLLMClient(base_url="http://x/v1", api_key="k",
+                          transport=transport(lambda r: httpx.Response(503, json=body)))
+    with pytest.raises(ProviderError) as ei:
+        await c.generate("p", model="gemini-3.8-flash")
+    assert ei.value.retryable and "HTTP 503, UNAVAILABLE" in str(ei.value)
+
+
+async def test_run_recovers_when_provider_503s_then_succeeds():
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return httpx.Response(503, json={"error": {"status": "UNAVAILABLE"}})
+        return httpx.Response(200, json={"choices": [{"message": {"content": "safety first"}}]})
+
+    c = ExternalLLMClient(base_url="http://x/v1", api_key="k", transport=transport(handler))
+    result, attempts = await generate_with_retry(c, prompt="p", model="m", system_prompt=None,
+                                                 max_attempts=5, backoff_seconds=0)
+    assert (result.text, attempts) == ("safety first", 3)
