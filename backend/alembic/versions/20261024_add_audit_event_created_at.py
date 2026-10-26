@@ -27,26 +27,18 @@ def _parse(value) -> datetime:
 def upgrade() -> None:
     bind = op.get_bind()
     columns = {c["name"] for c in sa.inspect(bind).get_columns("audit_events")}
-    if "created_at" in columns:
+    if "created_at" in columns:  # e.g. database created via create_all()
         return
     with op.batch_alter_table("audit_events") as batch_op:
         batch_op.add_column(sa.Column("created_at", sa.DateTime(timezone=True), nullable=True))
 
-    events = sa.table(
-        "audit_events",
-        sa.column("id", sa.Integer),
-        sa.column("occurred_at", sa.String),
-        sa.column("created_at", sa.DateTime(timezone=True)),
-    )
+    events = sa.table("audit_events", sa.column("id", sa.Integer),
+                      sa.column("occurred_at", sa.String), sa.column("created_at", sa.DateTime(timezone=True)))
     for row_id, occurred_at in bind.execute(sa.select(events.c.id, events.c.occurred_at)).all():
         bind.execute(events.update().where(events.c.id == row_id).values(created_at=_parse(occurred_at)))
 
     with op.batch_alter_table("audit_events") as batch_op:
-        batch_op.alter_column(
-            "created_at",
-            existing_type=sa.DateTime(timezone=True),
-            nullable=False,
-        )
+        batch_op.alter_column("created_at", existing_type=sa.DateTime(timezone=True), nullable=False)
 
 
 def downgrade() -> None:

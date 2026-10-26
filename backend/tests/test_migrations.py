@@ -1,5 +1,8 @@
-"""Guards against drift between the ORM models and the Alembic migrations."""
+"""Guards against drift between the ORM models and the Alembic migrations.
 
+The rest of the suite builds its schema with Base.metadata.create_all(), so a column that is
+missing from the migrations is invisible to it - but breaks every real `alembic upgrade head`.
+"""
 import os
 from pathlib import Path
 
@@ -28,11 +31,10 @@ def test_single_migration_head():
 
 
 def test_migrations_match_models(tmp_path, monkeypatch):
-    url = f"sqlite:///{tmp_path / 'm.db'}"
+    url = f"sqlite:///{tmp_path/'m.db'}"
     monkeypatch.setenv("DATABASE_URL", url)
     from app.config import get_settings
-
-    get_settings.cache_clear()
+    get_settings.cache_clear() if hasattr(get_settings, "cache_clear") else None
     command.upgrade(_config(url), "head")
     engine = create_engine(url)
     with engine.connect() as conn:

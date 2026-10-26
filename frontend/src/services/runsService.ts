@@ -20,8 +20,6 @@ type ApiRun = {
   name: string;
   provider: string;
   model: string;
-  suite_id?: number | null;
-  suite_name?: string | null;
   suite_version?: string;
   status: Run["status"];
   created_at: string;
@@ -53,9 +51,7 @@ const toRun = (value: ApiRun): Run => {
     name: value.name,
     provider: value.provider,
     model: value.model,
-    suite_id: value.suite_id == null ? null : String(value.suite_id),
-    suite_name: value.suite_name ?? value.suite_version ?? null,
-    suite_version: value.suite_version ?? null,
+    suite_id: null,
     status: value.status,
     total_cases: value.case_count ?? results.length,
     completed_cases: results.filter((r) => r.outcome !== "pending").length,
@@ -73,6 +69,6 @@ export const getRun = async (id: string) => toRun((await apiClient.get<ApiRun>(`
 export const createRun = async (payload: CreateRunPayload) =>
   toRun((await apiClient.post<ApiRun>("/runs", payload)).data);
 export const cancelRun = async (id: string) =>
-  toRun((await apiClient.post<ApiRun>(`/runs/${id}/cancel`)).data);
+  (await apiClient.post<Run>(`/runs/${id}/cancel`)).data;
 
 export const listTestSuites = async () => (await apiClient.get<TestSuite[]>("/test-suites")).data;

@@ -3,7 +3,9 @@ import {
   createModel,
   listModels,
   setModelEnabled,
+  updateModel,
   type CreateModelInput,
+  type UpdateModelInput,
 } from "../../services/modelsService";
 
 export const useModels = () =>
@@ -24,6 +26,16 @@ export function useToggleModel() {
   return useMutation({
     mutationFn: (v: { id: number; enabled: boolean }) =>
       setModelEnabled(String(v.id), v.enabled),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["models"] }),
+  });
+}
+
+export function useUpdateModel() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (v: { id: number; changes: UpdateModelInput }) =>
+      updateModel(String(v.id), v.changes),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["models"] }),
   });
 }

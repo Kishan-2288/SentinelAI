@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { KeyRound, Plus, X } from "lucide-react";
+import { KeyRound, Pencil, Plus, X } from "lucide-react";
 import PageHeader from "../components/layout/PageHeader";
 import LoadingState from "../components/common/LoadingState";
 import ErrorMessage from "../components/common/ErrorMessage";
 import EmptyState from "../components/common/EmptyState";
 import DataTable from "../components/common/DataTable";
-import { useCreateModel, useModels, useToggleModel } from "../features/models/useModels";
+import { useCreateModel, useModels, useToggleModel, useUpdateModel } from "../features/models/useModels";
 import { getErrorMessage } from "../services/apiClient";
 import type { ProviderType } from "../types/model";
 
@@ -13,6 +13,7 @@ export default function ModelsPage() {
   const { data, isLoading, isError, error } = useModels();
   const toggle = useToggleModel();
   const create = useCreateModel();
+  const update = useUpdateModel();
 
   const [showForm, setShowForm] = useState(false);
   const [provider, setProvider] = useState<ProviderType>("ollama");
@@ -22,6 +23,11 @@ export default function ModelsPage() {
   const [apiKey, setApiKey] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [formError, setFormError] = useState("");
+  const [editing, setEditing] = useState<{ id: number; provider: string; model: string } | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editBaseUrl, setEditBaseUrl] = useState("");
+  const [editApiKey, setEditApiKey] = useState("");
+  const [editError, setEditError] = useState("");
 
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorMessage error={error} />;
@@ -66,6 +72,39 @@ export default function ModelsPage() {
               : getErrorMessage(err),
           );
         },
+      },
+    );
+  }
+
+  function beginEdit(item: NonNullable<typeof data>[number]) {
+    if (item.id === null) return;
+    setEditing({ id: item.id, provider: item.provider, model: item.model });
+    setEditDisplayName(item.display_name ?? "");
+    setEditBaseUrl(item.base_url ?? "");
+    setEditApiKey("");
+    setEditError("");
+  }
+
+  function onSaveEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editing) return;
+    setEditError("");
+    if (editing.provider === "external" && editBaseUrl.trim() && !editBaseUrl.trim().startsWith("https://")) {
+      setEditError("External provider URLs must start with https://.");
+      return;
+    }
+    update.mutate(
+      {
+        id: editing.id,
+        changes: {
+          display_name: editDisplayName.trim() || null,
+          base_url: editBaseUrl.trim() || null,
+          ...(editApiKey.trim() ? { api_key: editApiKey.trim() } : {}),
+        },
+      },
+      {
+        onSuccess: () => setEditing(null),
+        onError: (err) => setEditError(getErrorMessage(err)),
       },
     );
   }
@@ -167,6 +206,36 @@ export default function ModelsPage() {
         </form>
       )}
 
+      {editing && (
+        <form onSubmit={onSaveEdit} className="panel mb-5 max-w-2xl space-y-4 p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold">Edit model</h2>
+              <p className="mt-1 text-sm text-muted">{editing.provider} / {editing.model} · model identity stays fixed to preserve run history.</p>
+            </div>
+            <button type="button" className="icon-button" aria-label="Cancel editing" onClick={() => setEditing(null)}><X className="h-4 w-4" /></button>
+          </div>
+          <label className="block text-sm font-medium">
+            Display name
+            <input className="field mt-1" value={editDisplayName} onChange={(event) => setEditDisplayName(event.target.value)} placeholder={editing.model} />
+          </label>
+          <label className="block text-sm font-medium">
+            Base URL
+            <input className="field mt-1" type="url" value={editBaseUrl} onChange={(event) => setEditBaseUrl(event.target.value)} />
+          </label>
+          {editing.provider === "external" && (
+            <label className="block text-sm font-medium">
+              Replace API key (optional)
+              <input className="field mt-1" type="password" autoComplete="new-password" value={editApiKey} onChange={(event) => setEditApiKey(event.target.value)} placeholder="Leave blank to keep the current key" />
+              <span className="mt-1 block text-xs text-muted">The current key is never shown. A new key replaces it only when entered.</span>
+            </label>
+          )}
+          {editError && <p className="text-sm text-danger">{editError}</p>}
+          {update.isError && !editError && <ErrorMessage error={update.error} title="Could not update the model" />}
+          <button type="submit" className="btn btn-primary" disabled={update.isPending}>{update.isPending ? "Saving..." : "Save changes"}</button>
+        </form>
+      )}
+
       <div className="panel">
         <DataTable
           rows={data ?? []}
@@ -213,6 +282,15 @@ export default function ModelsPage() {
                   />
                   {m.id === null ? m.source : m.enabled ? "On" : "Off"}
                 </label>
+              ),
+            },
+            {
+              key: "edit",
+              header: "Edit",
+              render: (m) => m.id === null ? <span className="text-muted">Register first</span> : (
+                <button type="button" className="btn btn-secondary" onClick={() => beginEdit(m)}>
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </button>
               ),
             },
           ]}

@@ -65,4 +65,7 @@ async def generate_with_retry(client: LLMClient, *, prompt: str, model: str | No
         except ProviderError as exc:
             if not exc.retryable or attempt >= max_attempts:
                 raise
-            await asyncio.sleep(backoff_seconds * (2 ** (attempt - 1)))
+            delay = backoff_seconds * (2 ** (attempt - 1))
+            if exc.retry_after:
+                delay = max(delay, min(exc.retry_after, 30.0))
+            await asyncio.sleep(delay)

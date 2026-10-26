@@ -25,6 +25,22 @@ Docs: http://127.0.0.1:8000/docs · Tests: `pytest -q` (no model or key needed)
 
 **Upgrading from Milestone 1?** The schema changed. Delete your old `sentinelai.db`, then run `alembic upgrade head`.
 
+## Registering OpenAI and Gemini models
+Both are called through the OpenAI-compatible `/chat/completions` API. Register each model with the
+**exact API model ID** (not the marketing name) and the matching `base_url`:
+
+| Provider | `model` | `base_url` |
+|---|---|---|
+| OpenAI | `gpt-4.1-mini` | `https://api.openai.com/v1` (default) |
+| Google Gemini | `gemini-3.8-flash` | `https://generativelanguage.googleapis.com/v1beta/openai` |
+
+A Gemini model pointed at `api.openai.com` (or the reverse) is rejected *before* the key is sent.
+Optional per-model `settings` are now applied to every request: `temperature` (default 0), `max_tokens`
+(default: provider limit) and `timeout_seconds`. Thinking models such as Gemini 3.x can spend output tokens
+on reasoning, so if you set `max_tokens`, keep it generous (an `output was cut off` error means it is too low).
+Provider errors now report a short code, e.g. `request rejected (HTTP 404, NOT_FOUND)`, and `Retry-After`
+on HTTP 429 is honoured.
+
 ## Using Supabase PostgreSQL
 1. In Supabase: Project Settings → Database → copy the connection string (the *session pooler* string works well on Windows/IPv4).
 2. Put it in `.env` as `DATABASE_URL=postgresql://postgres.<ref>:<password>@<host>:5432/postgres`
